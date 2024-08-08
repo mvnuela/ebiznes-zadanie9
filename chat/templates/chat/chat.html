@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatGPT App</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        #chat-box { max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ccc; border-radius: 5px; }
+        #messages { height: 300px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; }
+        #input-box { margin-top: 10px; display: flex; }
+        #user-input { flex: 1; padding: 10px; }
+        #send-button { padding: 10px 20px; }
+    </style>
+</head>
+<body>
+    <div id="chat-box">
+        <h2>Chat with GPT</h2>
+        <div id="messages"></div>
+        <div id="input-box">
+            <input type="text" id="user-input" placeholder="Type your message here...">
+            <button id="send-button">Send</button>
+        </div>
+    </div>
+
+    <script>
+        const messagesDiv = document.getElementById('messages');
+        const userInput = document.getElementById('user-input');
+        const sendButton = document.getElementById('send-button');
+
+        sendButton.onclick = function() {
+            const userMessage = userInput.value.trim();
+            if (userMessage) {
+                appendMessage('You', userMessage);
+                fetch('/get-response/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({ message: userMessage })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.message) {
+                        appendMessage('GPT', data.message);
+                    } else {
+                        appendMessage('Error', data.error);
+                    }
+                })
+                .catch(error => {
+                    appendMessage('Error', error);
+                });
+                userInput.value = '';
+            }
+        };
+
+        function appendMessage(sender, message) {
+            const messageElement = document.createElement('div');
+            messageElement.textContent = `${sender}: ${message}`;
+            messagesDiv.appendChild(messageElement);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
+</body>
+</html>
